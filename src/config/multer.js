@@ -46,7 +46,13 @@ const storageTypes = {
 };
 
 const fileFilter = (req, file, cb) => {
-  const allowedMimes = ["image/jpeg", "image/pjpeg", "image/png", "image/gif"];
+  const allowedMimes = [
+    "image/jpeg",
+    "image/pjpeg",
+    "image/png",
+    "image/gif",
+    "application/zip",
+  ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
@@ -58,7 +64,7 @@ const fileFilter = (req, file, cb) => {
 const multerConfig = multer({
   storage: storageTypes[process.env.STORAGE_TYPE],
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: 20 * 1024 * 1024, // Increase the limit for zip files if needed
   },
   fileFilter,
 });

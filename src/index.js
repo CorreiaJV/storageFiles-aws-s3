@@ -16,6 +16,7 @@ const app = express();
 // Database setup
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
+  useUnifiedTopology: true, // Add this option for the new Server Discover and Monitoring engine
 });
 
 app.use(express.json());
@@ -23,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(routes);
 
-// Corrija o caminho dos arquivos estáticos
+// Correct the path for static files
 app.use(
   "/files",
   express.static(path.resolve(__dirname, "..", "tmp", "uploads"))

@@ -1,41 +1,41 @@
 import { Router } from "express";
 import multer from "multer";
 import multerConfig from "./config/multer.js";
-import Post from "./models/Post.js";
+import File from "./models/File.js";
 
 const routes = Router();
 
-routes.get("/posts", async (req, res) => {
-  const posts = await Post.find();
+routes.get("/files", async (req, res) => {
+  const files = await File.find();
 
-  return res.json(posts);
+  return res.json(files);
 });
 
-routes.post("/posts", multer(multerConfig).single("file"), async (req, res) => {
+routes.post("/files", multer(multerConfig).single("file"), async (req, res) => {
   const { originalname: name, size, key, location: url = "" } = req.file;
 
-  const post = await Post.create({
+  const file = await File.create({
     name,
     size,
     key,
     url,
   });
-  return res.json(post);
+  return res.json(file);
 });
 
-routes.delete("/posts/:id", async (req, res) => {
+routes.delete("/files/:id", async (req, res) => {
   try {
-    const postId = req.params.id;
-    const post = await Post.findByIdAndDelete(postId);
+    const fileId = req.params.id;
+    const file = await File.findByIdAndDelete(fileId);
 
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
     }
 
-    return res.status(200).json({ message: 'Post deleted successfully' });
+    return res.status(200).json({ message: "File deleted successfully" });
   } catch (error) {
-    console.error('Error deleting post:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error deleting file:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
