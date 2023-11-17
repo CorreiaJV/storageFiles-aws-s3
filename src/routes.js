@@ -99,11 +99,9 @@ routes.post("/auth/refreshToken", async (req, res) => {
 
     const decoded = jwt.verify(refreshToken, secret);
 
-    const newAccessToken = jwt.sign(
-      { id: decoded.id },
-      secret,
-      { expiresIn: "30s" } // Pode ter um tempo de expiração diferente, se necessário
-    );
+    const newAccessToken = jwt.sign({ id: decoded.id }, secret, {
+      expiresIn: "30m",
+    });
 
     res
       .status(200)
