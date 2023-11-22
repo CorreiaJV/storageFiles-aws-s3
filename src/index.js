@@ -1,5 +1,6 @@
 import express from "express";
 import morgan from "morgan";
+import cors from "cors"; // Import the cors middleware
 import routes from "./routes.js";
 import mongoose from "mongoose";
 import path from "path";
@@ -16,15 +17,17 @@ const app = express();
 // Database setup
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
-  useUnifiedTopology: true, // Add this option for the new Server Discover and Monitoring engine
+  useUnifiedTopology: true,
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+
+app.use(cors());
+
 app.use(routes);
 
-// Correct the path for static files
 app.use(
   "/files",
   express.static(path.resolve(__dirname, "..", "tmp", "uploads"))
