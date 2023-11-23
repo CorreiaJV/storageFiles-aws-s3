@@ -9,7 +9,9 @@ import User from "./models/User.js";
 
 const routes = Router();
 
+
 //User Routes
+
 routes.post("/auth/register", async (req, res) => {
   const { name, email, password, confirmpassword } = req.body;
 
@@ -25,7 +27,7 @@ routes.post("/auth/register", async (req, res) => {
   const userExists = await User.findOne({ email: email });
 
   if (userExists) {
-    return res.status(422).json({ error: "E-mail already in use" });
+    return res.status(409).json({ error: "E-mail already in use" });
   }
 
   // Create password
@@ -62,13 +64,13 @@ routes.post("/auth/login", async (req, res) => {
   const checkPassword = await bcrypt.compare(password, user.password);
 
   if (!checkPassword) {
-    return res.status(422).json({ error: "Invalid Password" });
+    return res.status(401).json({ error: "Invalid Password" });
   }
 
   try {
     const secret = process.env.SECRET;
-    const expiresInAccessToken = "30s";
-    const expiresInRefreshToken = "1d"; // Expira em 1 dia (ajuste conforme necessário)
+    const expiresInAccessToken = "30m";
+    const expiresInRefreshToken = "1d";
 
     // Access Token
     const accessToken = jwt.sign({ id: user._id }, secret, {
@@ -139,9 +141,9 @@ function checkToken(req, res, next) {
 
   try {
     const secret = process.env.SECRET;
+    const decoded = jwt.verify(token, secret);
 
-    // Adicione a opção ignoreExpiration para capturar explicitamente a expiração do token
-    jwt.verify(token, secret, { ignoreExpiration: false });
+    req.user = { id: decoded.id };
 
     next();
   } catch (error) {
@@ -153,37 +155,70 @@ function checkToken(req, res, next) {
   }
 }
 
-// Files Routes
-routes.get("/files", async (req, res) => {
-  const files = await File.find();
+// Files Routes with user
 
-  return res.json(files);
-});
+routes.post(
+  "/files",
+  checkToken,
+  multer(multerConfig).single("file"),
+  async (req, res) => {
+    const { originalname: name, size, key, location: url = "" } = req.file;
 
-routes.post("/files", multer(multerConfig).single("file"), async (req, res) => {
-  const { originalname: name, size, key, location: url = "" } = req.file;
+    try {
+      const userId = req.user.id;
 
-  const file = await File.create({
-    name,
-    size,
-    key,
-    url,
-  });
-  return res.json(file);
-});
+      const file = await File.create({
+        name,
+        size,
+        key,
+        url,
+        user: userId,
+      });
+      await file.save();
+      return res.status(200).json({ msg: "File Uploaded!" });
+    } catch (error) {
+      console.error("Error creating file:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
-routes.delete("/files/:id", async (req, res) => {
+routes.get("/files", checkToken, async (req, res) => {
   try {
-    const fileId = req.params.id;
-    const file = await File.findByIdAndDelete(fileId);
+    const userId = req.user.id;
+
+    const userFiles = await File.find({ user: userId }).populate(
+      "user",
+      "-_id -password"
+    );
+
+    return res.json(userFiles);
+  } catch (error) {
+    console.error("Error getting user files:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+routes.delete("/files/:fileId", checkToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const fileId = req.params.fileId;
+
+    // Check if the file belongs to the specified user
+    const file = await File.findOne({ _id: fileId, user: userId });
 
     if (!file) {
-      return res.status(404).json({ error: "File not found" });
+      return res
+        .status(404)
+        .json({ error: "File not found or does not belong to the user" });
     }
+
+    // Delete the file
+    await File.findByIdAndDelete(fileId);
 
     return res.status(200).json({ message: "File deleted successfully" });
   } catch (error) {
-    console.error("Error deleting file:", error);
+    console.error("Error deleting user file:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
