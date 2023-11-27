@@ -159,10 +159,7 @@ function checkToken(req, res, next) {
 routes.post(
   "/files",
   checkToken,
-  multer(multerConfig).single("file"),
-  async (req, res) => {
-    const { originalname: name, size, key, location: url = "" } = req.file;
-
+  async (req, res, next) => {
     try {
       const userId = req.user.id;
 
@@ -173,6 +170,19 @@ routes.post(
           .status(400)
           .json({ error: "User already has a file associated" });
       }
+
+      next();
+    } catch (error) {
+      console.error("Error checking existing file:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
+  multer(multerConfig).single("file"),
+  async (req, res) => {
+    const { originalname: name, size, key, location: url = "" } = req.file;
+
+    try {
+      const userId = req.user.id;
 
       const file = await File.create({
         name,
@@ -199,6 +209,9 @@ routes.get("/files", checkToken, async (req, res) => {
       "-_id -password"
     );
 
+    if (!userFile) {
+      return res.status(400).json({ error: "User has no file" });
+    }
     return res.json(userFile);
   } catch (error) {
     console.error("Error getting user file:", error);
@@ -233,6 +246,25 @@ routes.delete("/files/:fileId", checkToken, async (req, res) => {
 routes.put(
   "/files/:fileId",
   checkToken,
+  async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const fileId = req.params.fileId;
+
+      const file = await File.findOne({ _id: fileId, user: userId });
+
+      if (!file) {
+        return res
+          .status(404)
+          .json({ error: "File not found or does not belong to the user" });
+      }
+
+      next();
+    } catch (error) {
+      console.error("Error checking existing file:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
   multer(multerConfig).single("file"),
   async (req, res) => {
     try {
