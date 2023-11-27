@@ -194,10 +194,10 @@ routes.get("/files", checkToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const userFile = await File.findOne({ user: userId }).populate("user", [
-      "name",
-      "email",
-    ]);
+    const userFile = await File.findOne({ user: userId }).populate(
+      "user",
+      "-_id -password"
+    );
 
     return res.json(userFile);
   } catch (error) {
