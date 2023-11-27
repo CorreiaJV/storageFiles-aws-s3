@@ -9,7 +9,6 @@ import User from "./models/User.js";
 
 const routes = Router();
 
-
 //User Routes
 
 routes.post("/auth/register", async (req, res) => {
@@ -167,6 +166,14 @@ routes.post(
     try {
       const userId = req.user.id;
 
+      const existingFile = await File.findOne({ user: userId });
+
+      if (existingFile) {
+        return res
+          .status(400)
+          .json({ error: "User already has a file associated" });
+      }
+
       const file = await File.create({
         name,
         size,
@@ -174,8 +181,8 @@ routes.post(
         url,
         user: userId,
       });
-      await file.save();
-      return res.status(200).json({ msg: "File Uploaded!" });
+
+      return res.status(201).json({ msg: "File Uploaded!", file });
     } catch (error) {
       console.error("Error creating file:", error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -187,14 +194,14 @@ routes.get("/files", checkToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const userFiles = await File.find({ user: userId }).populate(
-      "user",
-      "-_id -password"
-    );
+    const userFile = await File.findOne({ user: userId }).populate("user", [
+      "name",
+      "email",
+    ]);
 
-    return res.json(userFiles);
+    return res.json(userFile);
   } catch (error) {
-    console.error("Error getting user files:", error);
+    console.error("Error getting user file:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -204,7 +211,6 @@ routes.delete("/files/:fileId", checkToken, async (req, res) => {
     const userId = req.user.id;
     const fileId = req.params.fileId;
 
-    // Check if the file belongs to the specified user
     const file = await File.findOne({ _id: fileId, user: userId });
 
     if (!file) {
@@ -213,7 +219,7 @@ routes.delete("/files/:fileId", checkToken, async (req, res) => {
         .json({ error: "File not found or does not belong to the user" });
     }
 
-    // Delete the file
+    // Delete File
     await File.findByIdAndDelete(fileId);
 
     return res.status(200).json({ message: "File deleted successfully" });
@@ -222,5 +228,46 @@ routes.delete("/files/:fileId", checkToken, async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// Update File
+routes.put(
+  "/files/:fileId",
+  checkToken,
+  multer(multerConfig).single("file"),
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const fileId = req.params.fileId;
+
+      const file = await File.findOne({ _id: fileId, user: userId });
+
+      if (!file) {
+        return res
+          .status(404)
+          .json({ error: "File not found or does not belong to the user" });
+      }
+
+      const { originalname: name, size, key, location: url = "" } = req.file;
+
+      const updatedFile = await File.findByIdAndUpdate(
+        fileId,
+        {
+          name,
+          size,
+          key,
+          url,
+        },
+        { new: true }
+      );
+
+      return res
+        .status(200)
+        .json({ message: "File updated successfully", updatedFile });
+    } catch (error) {
+      console.error("Error updating user file:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 export default routes;
