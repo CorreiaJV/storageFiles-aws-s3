@@ -154,6 +154,37 @@ function checkToken(req, res, next) {
   }
 }
 
+routes.put("/user", checkToken, async (req, res) => {
+  const userId = req.user.id;
+  const { name, password } = req.body;
+
+  try {
+    const updateFields = {};
+    if (name) {
+      updateFields.name = name;
+    }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(12);
+      const passwordHash = await bcrypt.hash(password, salt);
+      updateFields.password = passwordHash;
+    }
+    console.log(updateFields);
+    const updatedUser = await User.findByIdAndUpdate(userId, updateFields, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({ msg: "User updated successfully" });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Files Routes with user
 
 routes.post(
@@ -209,10 +240,7 @@ routes.get("/files", checkToken, async (req, res) => {
       "-_id -password"
     );
 
-    if (!userFile) {
-      return res.status(400).json({ error: "User has no file" });
-    }
-    return res.json(userFile);
+    return res.status(200).json(userFile);
   } catch (error) {
     console.error("Error getting user file:", error);
     return res.status(500).json({ error: "Internal Server Error" });

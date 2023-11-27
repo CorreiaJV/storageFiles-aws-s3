@@ -7,6 +7,7 @@ import path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -22,6 +23,11 @@ mongoose.connect(process.env.MONGO_URL, {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  morgan("common", {
+    stream: fs.createWriteStream("./access.log", { flags: "a" }),
+  })
+);
 app.use(morgan("dev"));
 
 app.use(cors());
