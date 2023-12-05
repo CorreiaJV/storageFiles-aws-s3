@@ -8,6 +8,8 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import fs from "fs";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "../swagger.js";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -34,10 +36,7 @@ app.use(cors());
 
 app.use(routes);
 
-app.use(
-  "/files",
-  express.static(path.resolve(__dirname, "..", "tmp", "uploads"))
-);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");

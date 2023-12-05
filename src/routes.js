@@ -9,8 +9,63 @@ import User from "./models/User.js";
 
 const routes = Router();
 
+function checkToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ msg: "Access Denied!" });
+  }
+
+  try {
+    const secret = process.env.SECRET;
+    const decoded = jwt.verify(token, secret);
+
+    req.user = { id: decoded.id };
+
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ msg: "Token expired!" });
+    } else {
+      return res.status(400).json({ msg: "Invalid Token!" });
+    }
+  }
+}
+
 //User Routes
 
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: ['User routes']
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               confirmpassword:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: User created successfully
+ *       '422':
+ *         description: Validation error or passwords did not match
+ *       '409':
+ *         description: E-mail already in use
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.post("/auth/register", async (req, res) => {
   const { name, email, password, confirmpassword } = req.body;
 
@@ -47,6 +102,39 @@ routes.post("/auth/register", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login with existing credentials
+ *     tags: ['User routes']
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "Login Successful"
+ *               accessToken: "..."
+ *               refreshToken: "..."
+ *       '401':
+ *         description: Invalid Password
+ *       '404':
+ *         description: User not found
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -88,6 +176,34 @@ routes.post("/auth/login", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/refreshToken:
+ *   post:
+ *     summary: Refresh access token using refresh token
+ *     tags: ['User routes']
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: New Access Token generated
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "New Access Token generated"
+ *               accessToken: "..."
+ *       '401':
+ *         description: Invalid Refresh Token
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.post("/auth/refreshToken", async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -113,6 +229,31 @@ routes.post("/auth/refreshToken", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /user/{id}:
+ *   get:
+ *     summary: Get user details by ID
+ *     tags: ['User routes']
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: User ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: User details retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               user: { /* user object /* }
+ *       '404':
+ *         description: User not found
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.get("/user/:id", checkToken, async (req, res) => {
   const id = req.params.id;
 
@@ -130,30 +271,31 @@ routes.get("/user/:id", checkToken, async (req, res) => {
   }
 });
 
-function checkToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ msg: "Access Denied!" });
-  }
-
-  try {
-    const secret = process.env.SECRET;
-    const decoded = jwt.verify(token, secret);
-
-    req.user = { id: decoded.id };
-
-    next();
-  } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ msg: "Token expired!" });
-    } else {
-      return res.status(400).json({ msg: "Invalid Token!" });
-    }
-  }
-}
-
+/**
+ * @swagger
+ * /user:
+ *   put:
+ *     summary: Update user details
+ *     tags: ['User routes']
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: User updated successfully
+ *       '404':
+ *         description: User not found
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.put("/user", checkToken, async (req, res) => {
   const userId = req.user.id;
   const { name, password } = req.body;
@@ -186,7 +328,35 @@ routes.put("/user", checkToken, async (req, res) => {
 });
 
 // Files Routes with user
-
+/**
+ * @swagger
+ * /files:
+ *   post:
+ *     summary: Upload a file
+ *     tags: ['File routes']
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '201':
+ *         description: File uploaded successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               msg: "File Uploaded!"
+ *               file: { /* file object /* }
+ *       '400':
+ *         description: User already has a file associated
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.post(
   "/files",
   checkToken,
@@ -231,6 +401,26 @@ routes.post(
   }
 );
 
+/**
+ * @swagger
+ * /files:
+ *   get:
+ *     summary: Get the user's file
+ *     tags: ['File routes']
+ *     responses:
+ *       '200':
+ *         description: User's file retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               name: "example.txt"
+ *               size: 1024
+ *               key: "file-key"
+ *               url: "file-url"
+ *               user: { /* user object /* }
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.get("/files", checkToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -247,6 +437,27 @@ routes.get("/files", checkToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /files/{fileId}:
+ *   delete:
+ *     summary: Delete a file
+ *     tags: ['File routes']
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         required: true
+ *         description: ID of the file to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: File deleted successfully
+ *       '404':
+ *         description: File not found or does not belong to the user
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.delete("/files/:fileId", checkToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -270,7 +481,42 @@ routes.delete("/files/:fileId", checkToken, async (req, res) => {
   }
 });
 
-// Update File
+/**
+ * @swagger
+ * /files/{fileId}:
+ *   put:
+ *     summary: Update a file
+ *     tags: ['File routes']
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         required: true
+ *         description: ID of the file to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '200':
+ *         description: File updated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "File updated successfully"
+ *               updatedFile: { /* updated file object /* }
+ *       '404':
+ *         description: File not found or does not belong to the user
+ *       '500':
+ *         description: Internal Server Error
+ */
 routes.put(
   "/files/:fileId",
   checkToken,
