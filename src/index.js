@@ -32,7 +32,16 @@ app.use(
 );
 app.use(morgan("dev"));
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://master--dynamic-pithivier-c3cc03.netlify.app",
+      "https://master--dynamic-pithivier-c3cc03.netlify.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(routes);
 
