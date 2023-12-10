@@ -34,14 +34,10 @@ app.use(morgan("dev"));
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://master--dynamic-pithivier-c3cc03.netlify.app",
-      "https://master--dynamic-pithivier-c3cc03.netlify.app",
-    ],
-    credentials: true,
+    origin: "https://ccs-frontend-ashy.vercel.app",
   })
 );
+app.options("*", cors());
 
 app.use(routes);
 

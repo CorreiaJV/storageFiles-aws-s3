@@ -340,3 +340,7 @@
 ::1 - - [10/Dec/2023:18:24:43 +0000] "POST /auth/register HTTP/1.1" 201 38
 ::1 - - [10/Dec/2023:18:29:39 +0000] "POST /auth/login HTTP/1.1" 200 402
 ::1 - - [10/Dec/2023:18:29:43 +0000] "POST /auth/register HTTP/1.1" 409 33
+::1 - - [10/Dec/2023:18:38:18 +0000] "POST /auth/login HTTP/1.1" 200 402
+::1 - - [10/Dec/2023:20:44:01 +0000] "POST /auth/login HTTP/1.1" 200 402
+::1 - - [10/Dec/2023:20:44:28 +0000] "POST /auth/register HTTP/1.1" 409 33
+::1 - - [10/Dec/2023:20:44:31 +0000] "POST /auth/register HTTP/1.1" 201 38
