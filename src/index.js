@@ -34,7 +34,7 @@ app.use(morgan("dev"));
 
 app.use(
   cors({
-    origin: "https://ccs-frontend-ashy.vercel.app",
+    origin: "https://master--dynamic-pithivier-c3cc03.netlify.app/",
   })
 );
 app.options("*", cors());
