@@ -296,7 +296,7 @@ routes.get("/user/:id", checkToken, async (req, res) => {
  *       '500':
  *         description: Internal Server Error
  */
-routes.put("/user", checkToken, async (req, res) => {
+routes.put("/user-update", checkToken, async (req, res) => {
   const userId = req.user.id;
   const { name, password } = req.body;
 
