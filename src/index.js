@@ -32,7 +32,13 @@ app.use(
 );
 app.use(morgan("dev"));
 
-app.use(cors());
+app.use(
+  cors({
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
 
 app.use(routes);
 
