@@ -3,9 +3,9 @@ import swaggerJSDoc from "swagger-jsdoc";
 const swaggerDefinition = {
   openapi: "3.0.0",
   info: {
-    title: "Nome da sua API",
+    title: "Throw Crate - CSS",
     version: "1.0.0",
-    description: "Descrição da sua API",
+    description: "API developed to serve the Throw Crate frontend that was developed for the subject Cloud Computing at Politechnika",
   },
   tags: [
     {
